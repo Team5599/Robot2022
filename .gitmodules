@@ -1,0 +1,3 @@
+[submodule "src/main/java/frc/robot/Controllers"]
+	path = src/main/java/frc/robot/Controllers
+	url = https://github.com/Team5599/Java-Controller-Wrappers.git
