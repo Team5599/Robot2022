@@ -4,7 +4,6 @@
 package frc.robot;
 
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
@@ -18,7 +17,7 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 
 // import for xbox controller
-import edu.wpi.first.wpilibj.XboxController;
+import frc.robot.Controllers.XBoxController;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -32,12 +31,15 @@ public class Robot extends TimedRobot {
   private static final String kCustomAuto = "My Auto";
   private String m_autoSelected;
   private final SendableChooser<String> m_chooser = new SendableChooser<>();
+  
   // Declaration of Objects
   // Falcon FX (Falcon 500) Motors
-  WPI_TalonFX l1, l2, r1, r2;
+  WPI_TalonFX l0, l1, l2, r0, r1, r2;
+  CANSparkMax i0, i1, s0, s1;
+
+  MotorControllerGroup lDrive, rDrive, intake, shooter;
 
   // Drivetrain
-  MotorControllerGroup lDrive, rDrive;
   DifferentialDrive drivetrain;
 
   // Controller
@@ -56,24 +58,39 @@ public class Robot extends TimedRobot {
     // Initialize objects
     ctrl = new XBoxController(0);
 
-    /* CHANGE THE PORT NUMS. 
-      THESE ARE JUST MOMENTARY PLACEHOLDERS UNTIL ELECTRONICS DOES THEIR JOB 
-      *COUGH *COUGH 
-    */
-
     // Left Falcon motor(s)
-    l1 = new WPI_TalonFX(0); //left1
-    l2 = new WPI_TalonFX(1); //left2
+    l0 = new WPI_TalonFX(0);
+    l1 = new WPI_TalonFX(1); 
+    l2 = new WPI_TalonFX(2);
 
     // right Falcon motor(s)
-    r1 = new WPI_TalonFX(2); //right1
-    r2 = new WPI_TalonFX(3); //right2
+    r0 = new WPI_TalonFX(3);
+    r1 = new WPI_TalonFX(4); 
+    r2 = new WPI_TalonFX(5);
+
+    l0.configFactoryDefault();
+    l1.configFactoryDefault();
+    l2.configFactoryDefault();
+
+    r0.configFactoryDefault();
+    r1.configFactoryDefault();
+    r2.configFactoryDefault();
+
+    i0 = new CANSparkMax(6, MotorType.kBrushless);
+    i1 = new CANSparkMax(7, MotorType.kBrushless);
+
+    s0 = new CANSparkMax(8, MotorType.kBrushless);
+    s1 = new CANSparkMax(9, MotorType.kBrushless);
+
 
     // left drivetrain
     lDrive = new MotorControllerGroup(l1, l2);
 
     // right drivetrain
     rDrive = new MotorControllerGroup(r1, r2);
+
+    intake = new MotorControllerGroup(i0, i1);
+    shooter = new MotorControllerGroup(s0, s1);
 
     // drivetrain
     drivetrain = new DifferentialDrive(lDrive, rDrive);
@@ -88,7 +105,6 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotPeriodic() {
-    drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
   }
 
   /**
@@ -128,7 +144,9 @@ public class Robot extends TimedRobot {
 
   /** This function is called periodically during operator control. */
   @Override
-  public void teleopPeriodic() {}
+  public void teleopPeriodic() {
+    drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
+  }
 
   /** This function is called once when the robot is disabled. */
   @Override
