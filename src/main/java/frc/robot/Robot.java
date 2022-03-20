@@ -34,10 +34,10 @@ public class Robot extends TimedRobot {
   
   // Declaration of Objects
   // Falcon FX (Falcon 500) Motors
-  WPI_TalonFX l0, l1, l2, r0, r1, r2;
-  CANSparkMax i0, i1, s0, s1;
+  WPI_TalonFX l0, l1, r0, r1;
+  CANSparkMax intake, shooterPivot, s0, s1;
 
-  MotorControllerGroup lDrive, rDrive, intake, shooter;
+  MotorControllerGroup lDrive, rDrive, shooter;
 
   // Drivetrain
   DifferentialDrive drivetrain;
@@ -61,36 +61,30 @@ public class Robot extends TimedRobot {
     // Left Falcon motor(s)
     l0 = new WPI_TalonFX(0);
     l1 = new WPI_TalonFX(1); 
-    l2 = new WPI_TalonFX(2);
 
     // right Falcon motor(s)
     r0 = new WPI_TalonFX(3);
     r1 = new WPI_TalonFX(4); 
-    r2 = new WPI_TalonFX(5);
+    
+    s0 = new CANSparkMax(8, MotorType.kBrushless);
+    s1 = new CANSparkMax(9, MotorType.kBrushless);
+    
+    intake = new CANSparkMax(6, MotorType.kBrushless);
+    shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
 
     l0.configFactoryDefault();
     l1.configFactoryDefault();
-    l2.configFactoryDefault();
 
     r0.configFactoryDefault();
     r1.configFactoryDefault();
-    r2.configFactoryDefault();
 
-    i0 = new CANSparkMax(6, MotorType.kBrushless);
-    i1 = new CANSparkMax(7, MotorType.kBrushless);
-
-    s0 = new CANSparkMax(8, MotorType.kBrushless);
-    s1 = new CANSparkMax(9, MotorType.kBrushless);
-
+    shooter = new MotorControllerGroup(s0, s1);
 
     // left drivetrain
-    lDrive = new MotorControllerGroup(l1, l2);
+    lDrive = new MotorControllerGroup(l0, l1);
 
     // right drivetrain
-    rDrive = new MotorControllerGroup(r1, r2);
-
-    intake = new MotorControllerGroup(i0, i1);
-    shooter = new MotorControllerGroup(s0, s1);
+    rDrive = new MotorControllerGroup(r0, r1);
 
     // drivetrain
     drivetrain = new DifferentialDrive(lDrive, rDrive);
