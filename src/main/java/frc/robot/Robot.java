@@ -158,6 +158,14 @@ public class Robot extends TimedRobot {
         drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
         intake.set(ctrl.getLeftTriggerAbsolute());
         shooter.set(ctrl.getRightTriggerAbsolute());
+
+        if (ctrl.getDPadUp()) {
+            shooterPivot.set(-1.0f);
+        } else if (ctrl.getDPadDown()) {
+            shooterPivot.set(1.0f);
+        } else {
+            shooterPivot.stopMotor();
+        }
     }
 
     /** This function is called once when the robot is disabled. */
