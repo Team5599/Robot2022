@@ -3,6 +3,7 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
+import edu.wpi.first.wpilibj.CAN;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -38,7 +39,8 @@ public class Robot extends TimedRobot {
     // Declaration of Objects
     // Falcon FX (Falcon 500) Motors
     WPI_TalonFX l0, l1, r0, r1;
-    CANSparkMax intake, shooterPivot, s0, s1;
+    CANSparkMax intake, shooterPivot;
+    CtrlSpark s0, s1;
 
     MotorControllerGroup lDrive, rDrive, shooter;
 
@@ -70,8 +72,8 @@ public class Robot extends TimedRobot {
         r0 = new WPI_TalonFX(3);
         r1 = new WPI_TalonFX(4);
 
-        s0 = new CANSparkMax(8, MotorType.kBrushless);
-        s1 = new CANSparkMax(9, MotorType.kBrushless);
+        s0 = new CtrlSpark(8, MotorType.kBrushless);
+        s1 = new CtrlSpark(9, MotorType.kBrushless);
 
         intake = new CANSparkMax(6, MotorType.kBrushless);
         shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
@@ -156,9 +158,10 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopPeriodic() {
         drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
-        intake.set(ctrl.getLeftTriggerAbsolute());
+        intake.set(ctrl.getRightBumper() ? 1.0f : 0f);
         shooter.set(ctrl.getRightTriggerAbsolute());
-
+        
+        // pivot controls
         if (ctrl.getDPadUp()) {
             shooterPivot.set(-1.0f);
         } else if (ctrl.getDPadDown()) {
