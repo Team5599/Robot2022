@@ -5,19 +5,24 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.CAN;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-//import for TalonFX (Drivetrain motors)
+// Import for TalonFX (Drivetrain motors)
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
 
 // Imports for SparkMax (Neo motors)
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 
-// import for xbox controller
+// Import for pneumatics (PCM)
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+
+// Import for xbox controller
 import frc.robot.Controllers.XBoxController;
 
 /**
@@ -41,6 +46,7 @@ public class Robot extends TimedRobot {
     WPI_TalonFX l0, l1, r0, r1;
     CANSparkMax intake, shooterPivot;
     CtrlSpark s0, s1;
+    DoubleSolenoid dSole;
 
     MotorControllerGroup lDrive, rDrive, shooter;
 
@@ -70,8 +76,9 @@ public class Robot extends TimedRobot {
 
         // right Falcon motor(s)
         r0 = new WPI_TalonFX(3);
-        r1 = new WPI_TalonFX(4);
-
+        r1 = new WPI_TalonFX(4);    
+        
+        // shooter motor(s)
         s0 = new CtrlSpark(8, MotorType.kBrushless);
         s1 = new CtrlSpark(9, MotorType.kBrushless);
 
@@ -94,6 +101,11 @@ public class Robot extends TimedRobot {
 
         // drivetrain
         drivetrain = new DifferentialDrive(lDrive, rDrive);
+
+        // pneumatics
+        // need to figure out the type of pneumatic
+        dSole = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 6, 7);
+
     }
 
     /**
@@ -158,8 +170,10 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopPeriodic() {
         drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
-        intake.set(ctrl.getRightBumper() ? 1.0f : 0f);
+        intake.set(ctrl.getLeftTriggerAbsolute());
         shooter.set(ctrl.getRightTriggerAbsolute());
+        dSole.set(ctrl.getRightBumper() ? Value.kForward : Value.kOff);
+        dSole.set(ctrl.getLeftBumper() ? Value.kReverse : Value.kOff);
         
         // pivot controls
         if (ctrl.getDPadUp()) {
