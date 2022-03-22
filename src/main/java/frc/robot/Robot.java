@@ -39,7 +39,7 @@ public class Robot extends TimedRobot {
     // Declaration of Objects
     // Falcon FX (Falcon 500) Motors
     WPI_TalonFX l0, l1, r0, r1;
-    CANSparkMax intake, shooterPivot;
+    CANSparkMax intake, shooterPivot, cargoPush;
     CtrlSpark s0, s1;
 
     MotorControllerGroup lDrive, rDrive, shooter;
@@ -77,6 +77,8 @@ public class Robot extends TimedRobot {
 
         intake = new CANSparkMax(6, MotorType.kBrushless);
         shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
+
+        cargoPush = new CANSparkMax(5, MotorType.kBrushed);
 
         l0.configFactoryDefault();
         l1.configFactoryDefault();
@@ -160,7 +162,7 @@ public class Robot extends TimedRobot {
         drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
         intake.set(ctrl.getRightBumper() ? 1.0f : 0f);
         shooter.set(ctrl.getRightTriggerAbsolute());
-        
+
         // pivot controls
         if (ctrl.getDPadUp()) {
             shooterPivot.set(-1.0f);
