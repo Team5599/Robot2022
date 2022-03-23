@@ -167,8 +167,6 @@ public class Robot extends TimedRobot {
         intake.set(ctrl.getLeftTriggerAbsolute());
         shooter.set(ctrl.getRightTriggerAbsolute());
 
-<<<<<<< HEAD
-=======
         // pistons
         if (ctrl.getRightBumper()) {
             dSole.set(Value.kForward);
@@ -178,7 +176,6 @@ public class Robot extends TimedRobot {
             dSole.set(Value.kOff);
         }
 
->>>>>>> 84c768b029624e456ccd21432e95e08bc7c12902
         // pivot controls
         if (ctrl.getDPadUp()) {
             shooterPivot.set(-1.0f);
