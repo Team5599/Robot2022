@@ -20,6 +20,9 @@ import frc.robot.PIDMotors.PIDSparkMax;
 
 // Import for pneumatics (PCM)
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
 
 // Import for xbox controller
@@ -55,6 +58,10 @@ public class Robot extends TimedRobot {
 
     // Controller
     XBoxController ctrl;
+
+    // Limelight
+    NetworkTable limelight;
+    NetworkTableEntry tX, tY, tA;
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -106,6 +113,10 @@ public class Robot extends TimedRobot {
         // need to figure out the type of pneumatic
         dSole = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 6, 7);
 
+        limelight = NetworkTableInstance.getDefault().getTable("limelight");
+        tX = limelight.getEntry("tx");
+        tY = limelight.getEntry("ty");
+        tA = limelight.getEntry("ta");
     }
 
     /**
@@ -150,15 +161,9 @@ public class Robot extends TimedRobot {
     /** This function is called periodically during autonomous. */
     @Override
     public void autonomousPeriodic() {
-        switch (m_autoSelected) {
-            case kCustomAuto:
-                // Put custom auto code here
-                break;
-            case kDefaultAuto:
-            default:
-                // Put default auto code here
-                break;
-        }
+        double dX = tX.getDouble(0.0f);
+        double dY = tY.getDouble(0.0f);
+        double dA = tA.getDouble(0.0f);
     }
 
     /** This function is called once when teleop is enabled. */
