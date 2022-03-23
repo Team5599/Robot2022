@@ -210,7 +210,11 @@ public class Robot extends TimedRobot {
                 sRightEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold)
             ) {
                 cargoPush.set(1);
-            }
+            } 
+        } else {
+            sLeft.set(0.0);
+            sRight.set(0.0);
+            cargoPush.set(0.0);
         }
 
         // pistons
