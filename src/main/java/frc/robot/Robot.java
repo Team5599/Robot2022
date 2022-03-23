@@ -17,6 +17,8 @@ import frc.robot.PIDMotors.TalonFX.PIDTalonFX;
 // Imports for SparkMax (Neo motors)
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
+
 import frc.robot.PIDMotors.PIDSparkMax;
 
 // Import for pneumatics (PCM)
@@ -25,6 +27,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
+import edu.wpi.first.wpilibj.Encoder;
 import frc.robot.Controllers.LogitechExtreme3DProController;
 // Import for xbox controller
 import frc.robot.Controllers.XBoxController;
@@ -65,6 +68,9 @@ public class Robot extends TimedRobot {
     // Limelight
     NetworkTable limelight;
     NetworkTableEntry tX, tY, tA;
+
+    // encoder
+    RelativeEncoder sLeftEncoder, sRightEncoder;
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -122,6 +128,10 @@ public class Robot extends TimedRobot {
         tX = limelight.getEntry("tx");
         tY = limelight.getEntry("ty");
         tA = limelight.getEntry("ta");
+
+        // shooter motor encoder
+        sLeftEncoder = sLeft.getEncoder();
+        sRightEncoder = sRight.getEncoder();
     }
 
     /**
@@ -187,10 +197,20 @@ public class Robot extends TimedRobot {
         }
 
         // shooter and cargo push
+        float getThreshold = 0.05f;
+
         if (opCtrl.getButtonOne()) {
-            sLeft.set(-1);
-            sRight.set(1);
-            cargoPush.set(1);
+            sLeft.set(opCtrl.getSlider());
+            sRight.set(-opCtrl.getSlider());
+            if 
+            (
+                sLeftEncoder.getVelocity() >= 5700 * opCtrl.getSlider() * (1 - getThreshold) &&
+                sRightEncoder.getVelocity() >= 5700 * opCtrl.getSlider() * (1 - getThreshold) && 
+                sLeftEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold) &&
+                sRightEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold)
+            ) {
+                cargoPush.set(1);
+            }
         }
 
         // pistons
