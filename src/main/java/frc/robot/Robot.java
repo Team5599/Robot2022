@@ -92,6 +92,8 @@ public class Robot extends TimedRobot {
         intake = new CANSparkMax(6, MotorType.kBrushless);
         shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
 
+        cargoPush = new CANSparkMax(5, MotorType.kBrushed);
+
         l0.configFactoryDefault();
         l1.configFactoryDefault();
 
