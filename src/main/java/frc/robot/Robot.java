@@ -6,6 +6,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -24,7 +25,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DoubleSolenoid;
-
+import frc.robot.Controllers.LogitechExtreme3DProController;
 // Import for xbox controller
 import frc.robot.Controllers.XBoxController;
 
@@ -48,16 +49,19 @@ public class Robot extends TimedRobot {
     // Falcon FX (Falcon 500) Motors
     PIDTalonFX l0, l1, r0, r1;
     CANSparkMax intake, shooterPivot;
-    PIDSparkMax s0, s1;
+    PIDSparkMax sLeft, sRight;
+    Spark cargoPush;
     DoubleSolenoid dSole;
 
-    MotorControllerGroup lDrive, rDrive, shooter;
+    MotorControllerGroup lDrive, rDrive;
 
     // Drivetrain
     DifferentialDrive drivetrain;
 
     // Controller
-    XBoxController ctrl;
+    XBoxController driveCtrl;
+    // Op controller
+    LogitechExtreme3DProController opCtrl;
 
     // Limelight
     NetworkTable limelight;
@@ -75,7 +79,8 @@ public class Robot extends TimedRobot {
         SmartDashboard.putData("Auto choices", m_chooser);
 
         // Initialize objects
-        ctrl = new XBoxController(0);
+        driveCtrl = new XBoxController(0);
+        opCtrl = new LogitechExtreme3DProController(1);
 
         // Left Falcon motor(s)
         l0 = new PIDTalonFX(0);
@@ -86,19 +91,18 @@ public class Robot extends TimedRobot {
         r1 = new PIDTalonFX(4);
 
         // shooter motor(s)
-        s0 = new PIDSparkMax(8, MotorType.kBrushless);
-        s1 = new PIDSparkMax(9, MotorType.kBrushless);
+        sLeft = new PIDSparkMax(8, MotorType.kBrushless);
+        sRight = new PIDSparkMax(9, MotorType.kBrushless);
 
         intake = new CANSparkMax(6, MotorType.kBrushless);
         shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
+        cargoPush = new Spark(0);
 
         l0.configFactoryDefault();
         l1.configFactoryDefault();
 
         r0.configFactoryDefault();
         r1.configFactoryDefault();
-
-        shooter = new MotorControllerGroup(s0, s1);
 
         // left drivetrain
         lDrive = new MotorControllerGroup(l0, l1);
@@ -174,24 +178,34 @@ public class Robot extends TimedRobot {
     /** This function is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
-        drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
-        intake.set(ctrl.getLeftTriggerAbsolute());
-        shooter.set(ctrl.getRightTriggerAbsolute());
+        drivetrain.tankDrive(driveCtrl.getLeftThumbstickY(), driveCtrl.getRightThumbstickY());
+
+        // intake
+        if (opCtrl.getButtonTwo()) {
+            intake.set(-1);
+        }
+
+        // shooter and cargo push
+        if (opCtrl.getButtonOne()) {
+            sLeft.set(-1);
+            sRight.set(1);
+            cargoPush.set(1);
+        }
 
         // pistons
-        if (ctrl.getRightBumper()) {
+        if (opCtrl.getButtonSeven()) {
             dSole.set(Value.kForward);
-        } else if (ctrl.getLeftBumper()) {
+        } else if (opCtrl.getButtonNine()) {
             dSole.set(Value.kReverse);
         } else {
             dSole.set(Value.kOff);
         }
 
         // pivot controls
-        if (ctrl.getDPadUp()) {
-            shooterPivot.set(-1.0f);
-        } else if (ctrl.getDPadDown()) {
+        if (opCtrl.getJoystickY() < 0) {
             shooterPivot.set(1.0f);
+        } else if (opCtrl.getJoystickY() > 0) {
+            shooterPivot.set(-1.0f);
         } else {
             shooterPivot.stopMotor();
         }
