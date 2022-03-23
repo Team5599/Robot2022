@@ -218,19 +218,17 @@ public class Robot extends TimedRobot {
         }
 
         // pistons
-        if (opCtrl.getButtonSeven()) {
+        if (opCtrl.getButtonEleven()) {
             dSole.set(Value.kForward);
-        } else if (opCtrl.getButtonNine()) {
+        } else if (opCtrl.getButtonTwelve()) {
             dSole.set(Value.kReverse);
-        } else {
-            dSole.set(Value.kOff);
         }
-
+        
         // pivot controls
         if (opCtrl.getJoystickY() < 0) {
-            shooterPivot.set(1.0f);
+            shooterPivot.set(opCtrl.getJoystickY());
         } else if (opCtrl.getJoystickY() > 0) {
-            shooterPivot.set(-1.0f);
+            shooterPivot.set(-opCtrl.getJoystickY());
         } else {
             shooterPivot.stopMotor();
         }
