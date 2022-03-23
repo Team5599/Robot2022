@@ -3,7 +3,6 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
-import edu.wpi.first.wpilibj.CAN;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
@@ -12,11 +11,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 // Import for TalonFX (Drivetrain motors)
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+import frc.robot.PIDMotors.TalonFX.PIDTalonFX;
 
 // Imports for SparkMax (Neo motors)
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
+import frc.robot.PIDMotors.PIDSparkMax;
 
 // Import for pneumatics (PCM)
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
@@ -43,9 +43,9 @@ public class Robot extends TimedRobot {
 
     // Declaration of Objects
     // Falcon FX (Falcon 500) Motors
-    WPI_TalonFX l0, l1, r0, r1;
+    PIDTalonFX l0, l1, r0, r1;
     CANSparkMax intake, shooterPivot;
-    CtrlSpark s0, s1;
+    PIDSparkMax s0, s1;
     DoubleSolenoid dSole;
 
     MotorControllerGroup lDrive, rDrive, shooter;
@@ -71,16 +71,16 @@ public class Robot extends TimedRobot {
         ctrl = new XBoxController(0);
 
         // Left Falcon motor(s)
-        l0 = new WPI_TalonFX(0);
-        l1 = new WPI_TalonFX(1);
+        l0 = new PIDTalonFX(0);
+        l1 = new PIDTalonFX(1);
 
         // right Falcon motor(s)
-        r0 = new WPI_TalonFX(3);
-        r1 = new WPI_TalonFX(4);    
-        
+        r0 = new PIDTalonFX(3);
+        r1 = new PIDTalonFX(4);
+
         // shooter motor(s)
-        s0 = new CtrlSpark(8, MotorType.kBrushless);
-        s1 = new CtrlSpark(9, MotorType.kBrushless);
+        s0 = new PIDSparkMax(8, MotorType.kBrushless);
+        s1 = new PIDSparkMax(9, MotorType.kBrushless);
 
         intake = new CANSparkMax(6, MotorType.kBrushless);
         shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
@@ -172,16 +172,16 @@ public class Robot extends TimedRobot {
         drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
         intake.set(ctrl.getLeftTriggerAbsolute());
         shooter.set(ctrl.getRightTriggerAbsolute());
-        
+
         // pistons
-        if(ctrl.getRightBumper()) {
+        if (ctrl.getRightBumper()) {
             dSole.set(Value.kForward);
         } else if (ctrl.getLeftBumper()) {
             dSole.set(Value.kReverse);
         } else {
             dSole.set(Value.kOff);
         }
-        
+
         // pivot controls
         if (ctrl.getDPadUp()) {
             shooterPivot.set(-1.0f);
