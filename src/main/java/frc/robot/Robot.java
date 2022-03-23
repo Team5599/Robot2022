@@ -54,7 +54,6 @@ public class Robot extends TimedRobot {
     DoubleSolenoid dSole;
 
     MotorControllerGroup lDrive, rDrive;
-
     // Drivetrain
     DifferentialDrive drivetrain;
 
@@ -96,6 +95,8 @@ public class Robot extends TimedRobot {
 
         intake = new CANSparkMax(6, MotorType.kBrushless);
         shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
+        cargoPush = new Spark(0);
+
         cargoPush = new Spark(0);
 
         l0.configFactoryDefault();
