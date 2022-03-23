@@ -6,6 +6,7 @@ package frc.robot;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -51,6 +52,8 @@ public class Robot extends TimedRobot {
     PIDSparkMax s0, s1;
     DoubleSolenoid dSole;
 
+    Spark cargoPush;
+
     MotorControllerGroup lDrive, rDrive, shooter;
 
     // Drivetrain
@@ -92,7 +95,7 @@ public class Robot extends TimedRobot {
         intake = new CANSparkMax(6, MotorType.kBrushless);
         shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
 
-        cargoPush = new CANSparkMax(5, MotorType.kBrushed);
+        cargoPush = new Spark(0);
 
         l0.configFactoryDefault();
         l1.configFactoryDefault();
