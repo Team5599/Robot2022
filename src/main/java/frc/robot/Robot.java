@@ -172,8 +172,15 @@ public class Robot extends TimedRobot {
         drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
         intake.set(ctrl.getLeftTriggerAbsolute());
         shooter.set(ctrl.getRightTriggerAbsolute());
-        dSole.set(ctrl.getRightBumper() ? Value.kForward : Value.kOff);
-        dSole.set(ctrl.getLeftBumper() ? Value.kReverse : Value.kOff);
+        
+        // pistons
+        if(ctrl.getRightBumper()) {
+            dSole.set(Value.kForward);
+        } else if (ctrl.getLeftBumper()) {
+            dSole.set(Value.kReverse);
+        } else {
+            dSole.set(Value.kOff);
+        }
         
         // pivot controls
         if (ctrl.getDPadUp()) {
