@@ -3,21 +3,29 @@
 // the WPILib BSD license file in the root directory of this project.
 package frc.robot;
 
-import edu.wpi.first.wpilibj.CAN;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-//import for TalonFX (Drivetrain motors)
-import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
+// Import for TalonFX (Drivetrain motors)
+import frc.robot.PIDMotors.TalonFX.PIDTalonFX;
 
 // Imports for SparkMax (Neo motors)
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
+import frc.robot.PIDMotors.PIDSparkMax;
 
-// import for xbox controller
+// Import for pneumatics (PCM)
+import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+
+// Import for xbox controller
 import frc.robot.Controllers.XBoxController;
 
 /**
@@ -38,76 +46,78 @@ public class Robot extends TimedRobot {
 
     // Declaration of Objects
     // Falcon FX (Falcon 500) Motors
-    WPI_TalonFX l0, l1, r0, r1;
-    CANSparkMax intake, shooterPivot, cargoPush;
-    CtrlSpark s0, s1;
-
-    MotorControllerGroup lDrive, rDrive, shooter;
-
-    // Drivetrain
-    DifferentialDrive drivetrain;
-
-    // Controller
-    XBoxController ctrl;
-
     /**
      * This function is run when the robot is first started up and should be used
      * for any
      * initialization code.
-     */
-    @Override
-    public void robotInit() {
-        m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-        m_chooser.addOption("My Auto", kCustomAuto);
-        SmartDashboard.putData("Auto choices", m_chooser);
-
-        // Initialize objects
-        ctrl = new XBoxController(0);
-
-        // Left Falcon motor(s)
-        l0 = new WPI_TalonFX(0);
-        l1 = new WPI_TalonFX(1);
-
-        // right Falcon motor(s)
-        r0 = new WPI_TalonFX(3);
-        r1 = new WPI_TalonFX(4);
-
-        s0 = new CtrlSpark(8, MotorType.kBrushless);
-        s1 = new CtrlSpark(9, MotorType.kBrushless);
-
-        intake = new CANSparkMax(6, MotorType.kBrushless);
-        shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
-
-        cargoPush = new CANSparkMax(5, MotorType.kBrushed);
-
-        l0.configFactoryDefault();
-        l1.configFactoryDefault();
-
-        r0.configFactoryDefault();
-        r1.configFactoryDefault();
-
-        shooter = new MotorControllerGroup(s0, s1);
-
-        // left drivetrain
-        lDrive = new MotorControllerGroup(l0, l1);
-
-        // right drivetrain
-        rDrive = new MotorControllerGroup(r0, r1);
-
-        // drivetrain
-        drivetrain = new DifferentialDrive(lDrive, rDrive);
-    }
-
-    /**
-     * This function is called every robot packet, no matter the mode. Use this for
-     * items like
-     * diagnostics that you want ran during disabled, autonomous, teleoperated and
-     * test.
+     * 
+     * @Override
+     *           public void robotInit() {
+     *           m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
+     *           m_chooser.addOption("My Auto", kCustomAuto);
+     *           SmartDashboard.putData("Auto choices", m_chooser);
+     * 
+     *           // Initialize objects
+     *           ctrl = new XBoxController(0);
+     * 
+     *           // Left Falcon motor(s)
+     *           l0 = new PIDTalonFX(0);
+     *           l1 = new PIDTalonFX(1);
+     * 
+     *           // right Falcon motor(s)
+     *           r0 = new PIDTalonFX(3);
+     *           r1 = new PIDTalonFX(4);
+     * 
+     *           // shooter motor(s)
+     *           s0 = new PIDSparkMax(8, MotorType.kBrushless);
+     *           s1 = new PIDSparkMax(9, MotorType.kBrushless);
+     * 
+     *           intake = new CANSparkMax(6, MotorType.kBrushless);
+     *           shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
+     * 
+     *           cargoPush = new CANSparkMax(5, MotorType.kBrushed);
+     * 
+     *           l0.configFactoryDefault();
+     *           l1.configFactoryDefault();
+     * 
+     *           r0.configFactoryDefault();
+     *           r1.configFactoryDefault();
+     * 
+     *           shooter = new MotorControllerGroup(s0, s1);
+     * 
+     *           // left drivetrain
+     *           lDrive = new MotorControllerGroup(l0, l1);
+     * 
+     *           // right drivetrain
+     *           rDrive = new MotorControllerGroup(r0, r1);
+     * 
+     *           // drivetrain
+     *           drivetrain = new DifferentialDrive(lDrive, rDrive);
+     * 
+     *           // pneumatics
+     *           // need to figure out the type of pneumatic
+     *           dSole = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 6, 7);
+     * 
+     *           limelight =
+     *           NetworkTableInstance.getDefault().getTable("limelight");
+     *           tX = limelight.getEntry("tx");
+     *           tY = limelight.getEntry("ty");
+     *           tA = limelight.getEntry("ta");
+     *           }
+     * 
+     *           /**
+     *           This function is called every robot packet, no matter the mode. Use
+     *           this for
+     *           items like
+     *           diagnostics that you want ran during disabled, autonomous,
+     *           teleoperated and
+     *           test.
      *
-     * <p>
-     * This runs after the mode specific periodic functions, but before LiveWindow
-     * and
-     * SmartDashboard integrated updating.
+     *           <p>
+     *           This runs after the mode specific periodic functions, but before
+     *           LiveWindow
+     *           and
+     *           SmartDashboard integrated updating.
      */
     @Override
     public void robotPeriodic() {
@@ -140,15 +150,9 @@ public class Robot extends TimedRobot {
     /** This function is called periodically during autonomous. */
     @Override
     public void autonomousPeriodic() {
-        switch (m_autoSelected) {
-            case kCustomAuto:
-                // Put custom auto code here
-                break;
-            case kDefaultAuto:
-            default:
-                // Put default auto code here
-                break;
-        }
+        double dX = tX.getDouble(0.0f);
+        double dY = tY.getDouble(0.0f);
+        double dA = tA.getDouble(0.0f);
     }
 
     /** This function is called once when teleop is enabled. */
@@ -160,9 +164,21 @@ public class Robot extends TimedRobot {
     @Override
     public void teleopPeriodic() {
         drivetrain.tankDrive(ctrl.getLeftThumbstickY(), ctrl.getRightThumbstickY());
-        intake.set(ctrl.getRightBumper() ? 1.0f : 0f);
+        intake.set(ctrl.getLeftTriggerAbsolute());
         shooter.set(ctrl.getRightTriggerAbsolute());
 
+<<<<<<< HEAD
+=======
+        // pistons
+        if (ctrl.getRightBumper()) {
+            dSole.set(Value.kForward);
+        } else if (ctrl.getLeftBumper()) {
+            dSole.set(Value.kReverse);
+        } else {
+            dSole.set(Value.kOff);
+        }
+
+>>>>>>> 84c768b029624e456ccd21432e95e08bc7c12902
         // pivot controls
         if (ctrl.getDPadUp()) {
             shooterPivot.set(-1.0f);
