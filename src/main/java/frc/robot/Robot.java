@@ -78,9 +78,16 @@ public class Robot extends TimedRobot {
     final double DRIVE_WHEEL_RADIUS = 0.0762; // meters 
     final double TARMAC_DISTANCE = 2.15; // meters
 
+
     final double KpAim = -0.1;
     final double KpDistance = -0.1;
     final double min_aim_command = 0.05;
+
+    // we use 100 as some arbitrary number and tune from here
+    final double RANGE_MULTIPLIER = 100;
+    double rangeEstimate = 0;
+
+    boolean isLoadedWithBall = false;
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -192,7 +199,7 @@ public class Robot extends TimedRobot {
 
         double targetXOffset = tXEntry.getDouble(0.0);
         double targetYOffset = tYEntry.getDouble(0.0);
-        double targetArea = targetAreaEntry.getDouble(0.0);
+        double targetAreaPercent = targetAreaEntry.getDouble(0.0);
         double targetValid = targetValidEntry.getDouble(0.0);
 
         /**
@@ -248,6 +255,10 @@ public class Robot extends TimedRobot {
 
                 // Final adjustments
 
+                // TODO
+                // Maybe use targetAreaPercent to also determine if we need to go closer/farther
+                // For now, it's using the target's height to guage distance, which may not be the most accurate?
+
                 double heading_error = -targetXOffset;
                 double distance_error = -targetYOffset;
 
@@ -262,6 +273,12 @@ public class Robot extends TimedRobot {
                         break;
                     } else {
                         // we have the target, and we are as aligned as we'll ever be
+
+                        // calculate range to target
+                        
+                        rangeEstimate = targetAreaPercent * RANGE_MULTIPLIER;
+                        SmartDashboard.putNumber("EstimatedDistanceToTarget", rangeEstimate);
+                        
                         autoState = AUTO_STATE.SHOOTING;
                     }
                 }
@@ -278,11 +295,41 @@ public class Robot extends TimedRobot {
 
                 // TODO
                 // maybe save our target coordinates so we don't lose them while we adjust/angle
+
+                if (targetValid == 0.0){
+                    // we lost the target somehow :|
+                    autoState = AUTO_STATE.SEEKING;
+                    break;
+                }
+
                 // calculate pivot angle based on height
                 // calculate shooting motor speeds based on distance
+
+                
                 // spin shooting motors up
+
+                double predictedSpeedForShot = 1.0;
+
+                sLeft.set(predictedSpeedForShot);
+                sRight.set(-predictedSpeedForShot);
+
+                // shooter and cargo push
+                double getThreshold = 0.05f;
+
+                // % error = (actual - expected) / expected
+                double sLeftError = Math.abs(1- ((sLeftEncoder.getVelocity() - (predictedSpeedForShot * sLeft.getMaxRPM())) / (predictedSpeedForShot * sLeft.getMaxRPM())));
+                double sRightError = Math.abs(1 - ((sRightEncoder.getVelocity() - (predictedSpeedForShot * sRight.getMaxRPM())) / (predictedSpeedForShot * sRight.getMaxRPM())));
+
+
                 // once rpm is reached according to the sensor, push the ball to the shooter
                 // watch as we clock someone in the stands
+                if ((sLeftError < getThreshold) && (sRightError < getThreshold)) {
+                    cargoPush.set(1);
+                }
+
+                // TODO
+                // Wait a certain number of rpms/seconds
+                // change state to AUTO_STATE.DONE?
                 
                 break;
         
