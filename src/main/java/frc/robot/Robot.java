@@ -69,7 +69,7 @@ public class Robot extends TimedRobot {
 
     // Limelight
     NetworkTable limelight;
-    NetworkTableEntry tX, tY, tA;
+    NetworkTableEntry tXEntry, tYEntry, targetAreaEntry, targetValidEntry;
 
     // encoder
     RelativeEncoder sLeftEncoder, sRightEncoder;
@@ -77,6 +77,10 @@ public class Robot extends TimedRobot {
     AUTO_STATE autoState;
     final double DRIVE_WHEEL_RADIUS = 0.0762; // meters 
     final double TARMAC_DISTANCE = 2.15; // meters
+
+    final double KpAim = -0.1;
+    final double KpDistance = -0.1;
+    final double min_aim_command = 0.05;
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -120,9 +124,10 @@ public class Robot extends TimedRobot {
         dSole = new DoubleSolenoid(PneumaticsModuleType.CTREPCM, 6, 7);
 
         limelight = NetworkTableInstance.getDefault().getTable("limelight");
-        tX = limelight.getEntry("tx");
-        tY = limelight.getEntry("ty");
-        tA = limelight.getEntry("ta");
+        tXEntry = limelight.getEntry("tx");
+        tYEntry = limelight.getEntry("ty");
+        targetAreaEntry = limelight.getEntry("ta");
+        targetValidEntry = limelight.getEntry("tv");
 
         // shooter motor encoder
         sLeftEncoder = sLeft.getEncoder();
@@ -142,9 +147,16 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotPeriodic() {
+
         SmartDashboard.putData("Left Shooter", sLeft);
         SmartDashboard.putData("Right Shooter", sLeft);
         SmartDashboard.putNumber("Pivot Angle (degrees)", shooterPivot.getEncoder().getPosition() * 360);
+        
+        SmartDashboard.putString("LimelightTarget", (targetValidEntry.getDouble(0) == 1) ? "FOUND" : "NO TARGET");
+        SmartDashboard.putNumber("TargetX", tXEntry.getDouble(0));
+        SmartDashboard.putNumber("TargetY", tYEntry.getDouble(0));
+        SmartDashboard.putNumber("TargetAreaPercent", targetAreaEntry.getDouble(0));
+
     }
 
     /**
@@ -175,9 +187,11 @@ public class Robot extends TimedRobot {
     /** This function is called periodically during autonomous. */
     @Override
     public void autonomousPeriodic() {
-        double dX = tX.getDouble(0.0f);
-        double dY = tY.getDouble(0.0f);
-        double dA = tA.getDouble(0.0f);
+
+        double targetXOffset = tXEntry.getDouble(0.0);
+        double targetYOffset = tYEntry.getDouble(0.0);
+        double targetArea = targetAreaEntry.getDouble(0.0);
+        double targetValid = targetValidEntry.getDouble(0.0);
 
         /**
          * - TalonFX encoder measures in 2048 units per revolutions.
@@ -189,6 +203,7 @@ public class Robot extends TimedRobot {
          * - Move on to the next phase once we taxi the required distance
          */
         double distanceTaxied = (l0.getSensorCollection().getIntegratedSensorPosition() / 2048) * (Math.PI * 2 * DRIVE_WHEEL_RADIUS);
+        double steering_adjust = 0.0; 
 
         switch (autoState) {
 
@@ -207,22 +222,67 @@ public class Robot extends TimedRobot {
 
             case SEEKING:
 
-                // Spin until limelight is within range
-                
+                // Spin until limelight detects a target
+
+                if (targetValid == 0.0) {
+                    // We don't see the target, seek for the target by spinning in place at a safe speed.
+
+                    // TODO
+                    // Determine if it's better to spin left rather than right depending on our starting position, or a dashboard option
+                    boolean preferSpinLeft = true;
+
+                    steering_adjust = preferSpinLeft ? 0.3 : -0.3;
+
+                    // This is the wrong way to steer the robot with the given steering adjust but ...
+                    drivetrain.tankDrive(steering_adjust, -steering_adjust);
+
+                } else {
+                    autoState = AUTO_STATE.ALIGNING;
+                }
+         
                 break;
 
             case ALIGNING:
 
                 // Final adjustments
+
+                double heading_error = -targetXOffset;
+                double distance_error = -targetYOffset;
+
+                if (targetXOffset > 1.0){
+                    steering_adjust = KpAim*heading_error - min_aim_command;
+                } else if (targetXOffset < -1.0){
+                    steering_adjust = KpAim*heading_error + min_aim_command;
+                } else {
+                    if (targetValid == 0.0){
+                        // we lost the target
+                        autoState = AUTO_STATE.SEEKING;
+                        break;
+                    } else {
+                        // we have the target, and we are as aligned as we'll ever be
+                        autoState = AUTO_STATE.SHOOTING;
+                    }
+                }
+
+                double distance_adjust = KpDistance * distance_error;
+
+                // This is the wrong way to drive the robot with the given steering adjust and distance, but ...
+                drivetrain.tankDrive(steering_adjust + distance_adjust, steering_adjust + distance_adjust);
                 
                 break;
 
 
             case SHOOTING:
 
-                // FIRE!
+                // TODO
+                // maybe save our target coordinates so we don't lose them while we adjust/angle
+                // calculate pivot angle based on height
+                // calculate shooting motor speeds based on distance
+                // spin shooting motors up
+                // once rpm is reached according to the sensor, push the ball to the shooter
+                // watch as we clock someone in the stands
                 
-            break;
+                break;
         
             default:
                 drivetrain.stopMotor();
