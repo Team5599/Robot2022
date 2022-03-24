@@ -256,8 +256,8 @@ public class Robot extends TimedRobot {
             sRight.set(-opCtrl.getSlider());
 
             // % error = (actual - expected) / expected
-            double sLeftError = Math.abs((sLeftEncoder.getVelocity() - (opCtrl.getSlider() * sLeft.getMaxRPM())) / (opCtrl.getSlider() * sLeft.getMaxRPM()));
-            double sRightError = Math.abs((sRightEncoder.getVelocity() - (opCtrl.getSlider() * sRight.getMaxRPM())) / (opCtrl.getSlider() * sRight.getMaxRPM()));
+            double sLeftError = Math.abs(1- ((sLeftEncoder.getVelocity() - (opCtrl.getSlider() * sLeft.getMaxRPM())) / (opCtrl.getSlider() * sLeft.getMaxRPM())));
+            double sRightError = Math.abs(1 - ((sRightEncoder.getVelocity() - (opCtrl.getSlider() * sRight.getMaxRPM())) / (opCtrl.getSlider() * sRight.getMaxRPM())));
 
             if ((sLeftError < getThreshold) && (sRightError < getThreshold)) {
                 cargoPush.set(1);
