@@ -32,7 +32,6 @@ public class PIDSparkMax extends CANSparkMax implements Sendable {
         kFF = 0.000015;
         kMaxOutput = 1;
         kMinOutput = -1;
-        maxRPM = 5700;
 
         pidCtrl.setP(kP);
         pidCtrl.setI(kI);

@@ -31,6 +31,13 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import frc.robot.Controllers.XBoxController;
 import frc.robot.Controllers.LogitechExtreme3DProController;
 
+enum AUTO_STATE {
+    TAXIING,
+    SEEKING,
+    ALIGNING,
+    SHOOTING
+}
+
 /**
  * The VM is configured to automatically run this class, and to call the
  * functions corresponding to
@@ -66,6 +73,10 @@ public class Robot extends TimedRobot {
 
     // encoder
     RelativeEncoder sLeftEncoder, sRightEncoder;
+
+    AUTO_STATE autoState;
+    final double DRIVE_WHEEL_RADIUS = 0.0762; // meters 
+    final double TARMAC_DISTANCE = 2.15; // meters
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -133,7 +144,7 @@ public class Robot extends TimedRobot {
     public void robotPeriodic() {
         SmartDashboard.putData("Left Shooter", sLeft);
         SmartDashboard.putData("Right Shooter", sLeft);
-        SmartDashboard.putNumber("Pivot Angle (in revolutions)", shooterPivot.getEncoder().getPosition());
+        SmartDashboard.putNumber("Pivot Angle (degrees)", shooterPivot.getEncoder().getPosition() * 360);
     }
 
     /**
@@ -155,6 +166,10 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void autonomousInit() {
+        autoState = AUTO_STATE.TAXIING;
+
+        // Zero sensor
+        l0.getSensorCollection().setIntegratedSensorPosition(0, 1000);
     }
 
     /** This function is called periodically during autonomous. */
@@ -163,6 +178,59 @@ public class Robot extends TimedRobot {
         double dX = tX.getDouble(0.0f);
         double dY = tY.getDouble(0.0f);
         double dA = tA.getDouble(0.0f);
+
+        /**
+         * - TalonFX encoder measures in 2048 units per revolutions.
+         * - Get the distance in raw sensor units and divide it by 2048 to the number of revolutions
+         * - In theory a wheel travels the distance of its circumference in a revolution. 
+         * - Multiply the number of revolutions by the circumference to get the distance travelled
+         * - We know how far we need to travel to taxi off the tarmax and score points
+         * - Taxi forward until we achieve that distance
+         * - Move on to the next phase once we taxi the required distance
+         */
+        double distanceTaxied = (l0.getSensorCollection().getIntegratedSensorPosition() / 2048) * (Math.PI * 2 * DRIVE_WHEEL_RADIUS);
+
+        switch (autoState) {
+
+            case TAXIING:
+
+                if (distanceTaxied < TARMAC_DISTANCE) {
+                    drivetrain.tankDrive(0.5, 0.5);
+                } else {
+                    drivetrain.stopMotor();
+                    sLeft.stopMotor();
+                    sRight.stopMotor();
+                    shooterPivot.stopMotor();
+
+                    autoState = AUTO_STATE.SEEKING;
+                }
+
+            case SEEKING:
+
+                // Spin until limelight is within range
+                
+                break;
+
+            case ALIGNING:
+
+                // Final adjustments
+                
+                break;
+
+
+            case SHOOTING:
+
+                // FIRE!
+                
+            break;
+        
+            default:
+                drivetrain.stopMotor();
+                sLeft.stopMotor();
+                sRight.stopMotor();
+                shooterPivot.stopMotor();
+                break;
+        }
     }
 
     /** This function is called once when teleop is enabled. */
@@ -181,21 +249,23 @@ public class Robot extends TimedRobot {
         }
 
         // shooter and cargo push
-        float getThreshold = 0.05f;
+        double getThreshold = 0.05f;
 
         if (opCtrl.getButtonOne()) {
             sLeft.set(opCtrl.getSlider());
             sRight.set(-opCtrl.getSlider());
-            if (sLeftEncoder.getVelocity() >= 5700 * opCtrl.getSlider() * (1 - getThreshold) &&
-                    sRightEncoder.getVelocity() >= 5700 * opCtrl.getSlider() * (1 - getThreshold) &&
-                    sLeftEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold) &&
-                    sRightEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold)) {
+
+            // % error = (actual - expected) / expected
+            double sLeftError = Math.abs((sLeftEncoder.getVelocity() - (opCtrl.getSlider() * sLeft.getMaxRPM())) / (opCtrl.getSlider() * sLeft.getMaxRPM()));
+            double sRightError = Math.abs((sRightEncoder.getVelocity() - (opCtrl.getSlider() * sRight.getMaxRPM())) / (opCtrl.getSlider() * sRight.getMaxRPM()));
+
+            if ((sLeftError < getThreshold) && (sRightError < getThreshold)) {
                 cargoPush.set(1);
             }
         } else {
-            sLeft.set(0.0);
-            sRight.set(0.0);
-            cargoPush.set(0.0);
+            sLeft.stopMotor();
+            sRight.stopMotor();
+            cargoPush.stopMotor();
         }
 
         // pistons
@@ -204,15 +274,9 @@ public class Robot extends TimedRobot {
         } else if (opCtrl.getButtonTwelve()) {
             dSole.set(Value.kReverse);
         }
-        
+
         // pivot controls
-        if (opCtrl.getJoystickY() < 0) {
-            shooterPivot.set(opCtrl.getJoystickY());
-        } else if (opCtrl.getJoystickY() > 0) {
-            shooterPivot.set(-opCtrl.getJoystickY());
-        } else {
-            shooterPivot.stopMotor();
-        }
+        shooterPivot.set(-opCtrl.getJoystickY());
     }
 
     /** This function is called once when the robot is disabled. */
