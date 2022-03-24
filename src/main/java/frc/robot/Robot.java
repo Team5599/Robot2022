@@ -157,6 +157,8 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("TargetY", tYEntry.getDouble(0));
         SmartDashboard.putNumber("TargetAreaPercent", targetAreaEntry.getDouble(0));
 
+        SmartDashboard.putString("AutonomousState", autoState.toString());
+
     }
 
     /**
