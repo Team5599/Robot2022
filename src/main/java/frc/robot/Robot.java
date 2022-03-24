@@ -27,7 +27,7 @@ import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
-// Import for xbox controller
+// Import for controllers
 import frc.robot.Controllers.XBoxController;
 import frc.robot.Controllers.LogitechExtreme3DProController;
 
@@ -63,9 +63,9 @@ public class Robot extends TimedRobot {
     DifferentialDrive drivetrain;
 
     // Controller
-    XBoxController driveCtrl;
+    XBoxController driverController;
     // Op controller
-    LogitechExtreme3DProController opCtrl;
+    LogitechExtreme3DProController operatorController;
 
     // Limelight
     NetworkTable limelight;
@@ -90,8 +90,8 @@ public class Robot extends TimedRobot {
     @Override
     public void robotInit() {
         // Initialize objects
-        driveCtrl = new XBoxController(0);
-        opCtrl = new LogitechExtreme3DProController(1);
+        driverController = new XBoxController(0);
+        operatorController = new LogitechExtreme3DProController(1);
 
         // Left Falcon motor(s)
         l0 = new PIDTalonFX(0);
@@ -301,23 +301,23 @@ public class Robot extends TimedRobot {
     /** This function is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
-        drivetrain.tankDrive(driveCtrl.getLeftThumbstickY(), driveCtrl.getRightThumbstickY());
+        drivetrain.tankDrive(driverController.getLeftThumbstickY(), driverController.getRightThumbstickY());
 
         // intake
-        if (opCtrl.getButtonTwo()) {
+        if (operatorController.getButtonTwo()) {
             intake.set(-1);
         }
 
         // shooter and cargo push
         double getThreshold = 0.05f;
 
-        if (opCtrl.getButtonOne()) {
-            sLeft.set(opCtrl.getSlider());
-            sRight.set(-opCtrl.getSlider());
+        if (operatorController.getButtonOne()) {
+            sLeft.set(operatorController.getSlider());
+            sRight.set(-operatorController.getSlider());
 
             // % error = (actual - expected) / expected
-            double sLeftError = Math.abs(1- ((sLeftEncoder.getVelocity() - (opCtrl.getSlider() * sLeft.getMaxRPM())) / (opCtrl.getSlider() * sLeft.getMaxRPM())));
-            double sRightError = Math.abs(1 - ((sRightEncoder.getVelocity() - (opCtrl.getSlider() * sRight.getMaxRPM())) / (opCtrl.getSlider() * sRight.getMaxRPM())));
+            double sLeftError = Math.abs(1- ((sLeftEncoder.getVelocity() - (operatorController.getSlider() * sLeft.getMaxRPM())) / (operatorController.getSlider() * sLeft.getMaxRPM())));
+            double sRightError = Math.abs(1 - ((sRightEncoder.getVelocity() - (operatorController.getSlider() * sRight.getMaxRPM())) / (operatorController.getSlider() * sRight.getMaxRPM())));
 
             if ((sLeftError < getThreshold) && (sRightError < getThreshold)) {
                 cargoPush.set(1);
@@ -329,14 +329,14 @@ public class Robot extends TimedRobot {
         }
 
         // pistons
-        if (opCtrl.getButtonEleven()) {
+        if (operatorController.getButtonEleven()) {
             dSole.set(Value.kForward);
-        } else if (opCtrl.getButtonTwelve()) {
+        } else if (operatorController.getButtonTwelve()) {
             dSole.set(Value.kReverse);
         }
 
         // pivot controls
-        shooterPivot.set(-opCtrl.getJoystickY());
+        shooterPivot.set(-operatorController.getJoystickY());
     }
 
     /** This function is called once when the robot is disabled. */
