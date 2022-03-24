@@ -76,7 +76,8 @@ public class Robot extends TimedRobot {
 
     AUTO_STATE autoState;
     final double DRIVE_WHEEL_RADIUS = 0.0762; // meters 
-    final double TARMAC_DISTANCE = 2.15; // meters
+    final double TARMAC_DISTANCE = 2.65; // meters
+    final double SHOOTER_THRESHOLD = 0.05;
 
 
     final double KpAim = -0.1;
@@ -211,7 +212,7 @@ public class Robot extends TimedRobot {
          * - Taxi forward until we achieve that distance
          * - Move on to the next phase once we taxi the required distance
          */
-        double distanceTaxied = (l0.getSensorCollection().getIntegratedSensorPosition() / 2048) * (Math.PI * 2 * DRIVE_WHEEL_RADIUS);
+        double distanceTaxied = (l0.getSensorCollection().getIntegratedSensorPosition() / 2048) * (Math.PI * 2 * DRIVE_WHEEL_RADIUS); // meters
         double steering_adjust = 0.0; 
 
         switch (autoState) {
@@ -314,16 +315,15 @@ public class Robot extends TimedRobot {
                 sRight.set(-predictedSpeedForShot);
 
                 // shooter and cargo push
-                double getThreshold = 0.05f;
 
                 // % error = (actual - expected) / expected
-                double sLeftError = Math.abs(1- ((sLeftEncoder.getVelocity() - (predictedSpeedForShot * sLeft.getMaxRPM())) / (predictedSpeedForShot * sLeft.getMaxRPM())));
-                double sRightError = Math.abs(1 - ((sRightEncoder.getVelocity() - (predictedSpeedForShot * sRight.getMaxRPM())) / (predictedSpeedForShot * sRight.getMaxRPM())));
+                double sLeftError = Math.abs((sLeftEncoder.getVelocity() - (predictedSpeedForShot * sLeft.getMaxRPM())) / (predictedSpeedForShot * sLeft.getMaxRPM()));
+                double sRightError = Math.abs((sRightEncoder.getVelocity() - (predictedSpeedForShot * sRight.getMaxRPM())) / (predictedSpeedForShot * sRight.getMaxRPM()));
 
 
                 // once rpm is reached according to the sensor, push the ball to the shooter
                 // watch as we clock someone in the stands
-                if ((sLeftError < getThreshold) && (sRightError < getThreshold)) {
+                if ((sLeftError < SHOOTER_THRESHOLD) && (sRightError < SHOOTER_THRESHOLD)) {
                     cargoPush.set(1);
                 }
 
@@ -358,17 +358,16 @@ public class Robot extends TimedRobot {
         }
 
         // shooter and cargo push
-        double getThreshold = 0.05f;
 
         if (operatorController.getButtonOne()) {
             sLeft.set(operatorController.getSlider());
             sRight.set(-operatorController.getSlider());
 
             // % error = (actual - expected) / expected
-            double sLeftError = Math.abs(1- ((sLeftEncoder.getVelocity() - (operatorController.getSlider() * sLeft.getMaxRPM())) / (operatorController.getSlider() * sLeft.getMaxRPM())));
-            double sRightError = Math.abs(1 - ((sRightEncoder.getVelocity() - (operatorController.getSlider() * sRight.getMaxRPM())) / (operatorController.getSlider() * sRight.getMaxRPM())));
+            double sLeftError = Math.abs((sLeftEncoder.getVelocity() - (operatorController.getSlider() * sLeft.getMaxRPM())) / (operatorController.getSlider() * sLeft.getMaxRPM()));
+            double sRightError = Math.abs((sRightEncoder.getVelocity() - (operatorController.getSlider() * sRight.getMaxRPM())) / (operatorController.getSlider() * sRight.getMaxRPM()));
 
-            if ((sLeftError < getThreshold) && (sRightError < getThreshold)) {
+            if ((sLeftError < SHOOTER_THRESHOLD) && (sRightError < SHOOTER_THRESHOLD)) {
                 cargoPush.set(1);
             }
         } else {
