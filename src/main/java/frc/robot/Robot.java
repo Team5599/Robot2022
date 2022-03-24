@@ -223,7 +223,7 @@ public class Robot extends TimedRobot {
         } else if (opCtrl.getButtonTwelve()) {
             dSole.set(Value.kReverse);
         }
-        
+
         // pivot controls
         if (opCtrl.getJoystickY() < 0) {
             shooterPivot.set(opCtrl.getJoystickY());
