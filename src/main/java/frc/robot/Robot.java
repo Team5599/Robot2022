@@ -8,7 +8,6 @@ import edu.wpi.first.wpilibj.DoubleSolenoid.Value;
 import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 // Import for TalonFX (Drivetrain motors)
@@ -18,19 +17,19 @@ import frc.robot.PIDMotors.TalonFX.PIDTalonFX;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
-
 import frc.robot.PIDMotors.PIDSparkMax;
 
 // Import for pneumatics (PCM)
 import edu.wpi.first.wpilibj.PneumaticsModuleType;
+import edu.wpi.first.wpilibj.DoubleSolenoid;
+
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.DoubleSolenoid;
-import edu.wpi.first.wpilibj.Encoder;
-import frc.robot.Controllers.LogitechExtreme3DProController;
+
 // Import for xbox controller
 import frc.robot.Controllers.XBoxController;
+import frc.robot.Controllers.LogitechExtreme3DProController;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -43,10 +42,6 @@ import frc.robot.Controllers.XBoxController;
  */
 
 public class Robot extends TimedRobot {
-    private static final String kDefaultAuto = "Default";
-    private static final String kCustomAuto = "My Auto";
-    private String m_autoSelected;
-    private final SendableChooser<String> m_chooser = new SendableChooser<>();
 
     // Declaration of Objects
     // Falcon FX (Falcon 500) Motors
@@ -79,10 +74,6 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotInit() {
-        m_chooser.setDefaultOption("Default Auto", kDefaultAuto);
-        m_chooser.addOption("My Auto", kCustomAuto);
-        SmartDashboard.putData("Auto choices", m_chooser);
-
         // Initialize objects
         driveCtrl = new XBoxController(0);
         opCtrl = new LogitechExtreme3DProController(1);
@@ -92,24 +83,17 @@ public class Robot extends TimedRobot {
         l1 = new PIDTalonFX(1);
 
         // right Falcon motor(s)
-        r0 = new PIDTalonFX(3);
-        r1 = new PIDTalonFX(4);
+        r0 = new PIDTalonFX(2);
+        r1 = new PIDTalonFX(3);
 
         // shooter motor(s)
-        sLeft = new PIDSparkMax(8, MotorType.kBrushless);
-        sRight = new PIDSparkMax(9, MotorType.kBrushless);
+        sLeft = new PIDSparkMax(4, MotorType.kBrushless);
+        sRight = new PIDSparkMax(5, MotorType.kBrushless);
 
         intake = new CANSparkMax(6, MotorType.kBrushless);
         shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
-        cargoPush = new Spark(0);
 
-        cargoPush = new Spark(0);
-
-        l0.configFactoryDefault();
-        l1.configFactoryDefault();
-
-        r0.configFactoryDefault();
-        r1.configFactoryDefault();
+        cargoPush = new Spark(0); // TODO: Get from electronics
 
         // left drivetrain
         lDrive = new MotorControllerGroup(l0, l1);
@@ -147,6 +131,9 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotPeriodic() {
+        SmartDashboard.putData("Left Shooter", sLeft);
+        SmartDashboard.putData("Right Shooter", sLeft);
+        SmartDashboard.putNumber("Pivot Angle (in revolutions)", shooterPivot.getEncoder().getPosition());
     }
 
     /**
@@ -168,9 +155,6 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void autonomousInit() {
-        m_autoSelected = m_chooser.getSelected();
-        // m_autoSelected = SmartDashboard.getString("Auto Selector", kDefaultAuto);
-        System.out.println("Auto selected: " + m_autoSelected);
     }
 
     /** This function is called periodically during autonomous. */
@@ -202,15 +186,12 @@ public class Robot extends TimedRobot {
         if (opCtrl.getButtonOne()) {
             sLeft.set(opCtrl.getSlider());
             sRight.set(-opCtrl.getSlider());
-            if 
-            (
-                sLeftEncoder.getVelocity() >= 5700 * opCtrl.getSlider() * (1 - getThreshold) &&
-                sRightEncoder.getVelocity() >= 5700 * opCtrl.getSlider() * (1 - getThreshold) && 
-                sLeftEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold) &&
-                sRightEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold)
-            ) {
+            if (sLeftEncoder.getVelocity() >= 5700 * opCtrl.getSlider() * (1 - getThreshold) &&
+                    sRightEncoder.getVelocity() >= 5700 * opCtrl.getSlider() * (1 - getThreshold) &&
+                    sLeftEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold) &&
+                    sRightEncoder.getVelocity() <= 5700 * opCtrl.getSlider() * (1 + getThreshold)) {
                 cargoPush.set(1);
-            } 
+            }
         } else {
             sLeft.set(0.0);
             sRight.set(0.0);
@@ -239,6 +220,11 @@ public class Robot extends TimedRobot {
     /** This function is called once when the robot is disabled. */
     @Override
     public void disabledInit() {
+        drivetrain.stopMotor();
+        sLeft.stopMotor();
+        sRight.stopMotor();
+        shooterPivot.stopMotor();
+        dSole.set(Value.kOff);
     }
 
     /** This function is called periodically when disabled. */
