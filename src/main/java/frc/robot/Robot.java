@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.cameraserver.CameraServer;
 
 // Import for TalonFX (Drivetrain motors)
 import frc.robot.PIDMotors.TalonFX.PIDTalonFX;
@@ -53,10 +54,12 @@ public class Robot extends TimedRobot {
     // Declaration of Objects
     // Falcon FX (Falcon 500) Motors
     PIDTalonFX l0, l1, r0, r1;
-    CANSparkMax intake, shooterPivot;
+    CANSparkMax intake;
     PIDSparkMax sLeft, sRight;
     Spark cargoPush;
     DoubleSolenoid dSole;
+
+    Spark shooterPivot;
 
     MotorControllerGroup lDrive, rDrive;
     // Drivetrain
@@ -102,21 +105,21 @@ public class Robot extends TimedRobot {
         operatorController = new LogitechExtreme3DProController(1);
 
         // Left Falcon motor(s)
-        l0 = new PIDTalonFX(0);
-        l1 = new PIDTalonFX(1);
+        l0 = new PIDTalonFX(2); //14
+        l1 = new PIDTalonFX(3); //15
 
         // right Falcon motor(s)
-        r0 = new PIDTalonFX(2);
-        r1 = new PIDTalonFX(3);
+        r0 = new PIDTalonFX(1); //0
+        r1 = new PIDTalonFX(0); //1
 
         // shooter motor(s)
-        sLeft = new PIDSparkMax(4, MotorType.kBrushless);
-        sRight = new PIDSparkMax(5, MotorType.kBrushless);
+        sLeft = new PIDSparkMax(12, MotorType.kBrushless);
+        sRight = new PIDSparkMax(3, MotorType.kBrushless);
 
-        intake = new CANSparkMax(6, MotorType.kBrushless);
-        shooterPivot = new CANSparkMax(7, MotorType.kBrushless);
+        intake = new CANSparkMax(2, MotorType.kBrushless);
+        shooterPivot = new Spark(1);
 
-        cargoPush = new Spark(0); // TODO: Get from electronics
+        cargoPush = new Spark(0);
 
         // left drivetrain
         lDrive = new MotorControllerGroup(l0, l1);
@@ -126,6 +129,8 @@ public class Robot extends TimedRobot {
 
         // drivetrain
         drivetrain = new DifferentialDrive(lDrive, rDrive);
+
+        CameraServer.startAutomaticCapture();
 
         // pneumatics
         // need to figure out the type of pneumatic
@@ -155,18 +160,20 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void robotPeriodic() {
-
         SmartDashboard.putData("Left Shooter", sLeft);
-        SmartDashboard.putData("Right Shooter", sLeft);
-        SmartDashboard.putNumber("Pivot Angle (degrees)", shooterPivot.getEncoder().getPosition() * 360);
+        SmartDashboard.putData("Right Shooter", sRight);
+        // SmartDashboard.putNumber("Pivot Angle (degrees)", shooterPivot.getEncoder().getPosition() * 360);
         
         SmartDashboard.putString("LimelightTarget", (targetValidEntry.getDouble(0) == 1) ? "FOUND" : "NO TARGET");
         SmartDashboard.putNumber("TargetX", tXEntry.getDouble(0));
         SmartDashboard.putNumber("TargetY", tYEntry.getDouble(0));
         SmartDashboard.putNumber("TargetAreaPercent", targetAreaEntry.getDouble(0));
 
-        SmartDashboard.putString("AutonomousState", autoState.toString());
+        // SmartDashboard.putString("AutonomousState", autoState.toString());
 
+        SmartDashboard.putNumber("Left Shooter Encoder", sLeftEncoder.getVelocity());
+        SmartDashboard.putNumber("Right Shooter Encoder", sRightEncoder.getVelocity());
+        SmartDashboard.putNumber("shooterThreshold", SHOOTER_THRESHOLD);
     }
 
     /**
@@ -188,10 +195,15 @@ public class Robot extends TimedRobot {
      */
     @Override
     public void autonomousInit() {
-        autoState = AUTO_STATE.TAXIING;
+        setAutonomousState("TAXIING");
 
         // Zero sensor
-        l0.getSensorCollection().setIntegratedSensorPosition(0, 1000);
+        // l0.getSensorCollection().setIntegratedSensorPosition(0, 1000);
+    }
+
+    public void setAutonomousState(String state) {
+        System.out.println("Set Autonomous State " + state);
+        autoState = AUTO_STATE.valueOf(state);
     }
 
     /** This function is called periodically during autonomous. */
@@ -217,17 +229,17 @@ public class Robot extends TimedRobot {
 
         switch (autoState) {
 
-            case TAXIING:
+             case TAXIING:
 
-                if (distanceTaxied < TARMAC_DISTANCE) {
-                    drivetrain.tankDrive(0.5, 0.5);
-                } else {
-                    drivetrain.stopMotor();
-                    sLeft.stopMotor();
-                    sRight.stopMotor();
-                    shooterPivot.stopMotor();
+              if (distanceTaxied < TARMAC_DISTANCE) {
+                drivetrain.tankDrive(0.5, 0.5);
+                 } else {
+                     drivetrain.stopMotor();
+                     sLeft.stopMotor();
+                     sRight.stopMotor();
+                     shooterPivot.stopMotor();
 
-                    autoState = AUTO_STATE.SEEKING;
+                     setAutonomousState("SEEKING");
                 }
 
             case SEEKING:
@@ -247,7 +259,7 @@ public class Robot extends TimedRobot {
                     drivetrain.tankDrive(steering_adjust, -steering_adjust);
 
                 } else {
-                    autoState = AUTO_STATE.ALIGNING;
+                    setAutonomousState("ALIGNING");
                 }
          
                 break;
@@ -270,7 +282,7 @@ public class Robot extends TimedRobot {
                 } else {
                     if (targetValid == 0.0){
                         // we lost the target
-                        autoState = AUTO_STATE.SEEKING;
+                        setAutonomousState("SEEKING");
                         break;
                     } else {
                         // we have the target, and we are as aligned as we'll ever be
@@ -280,7 +292,7 @@ public class Robot extends TimedRobot {
                         rangeEstimate = targetAreaPercent * RANGE_MULTIPLIER;
                         SmartDashboard.putNumber("EstimatedDistanceToTarget", rangeEstimate);
                         
-                        autoState = AUTO_STATE.SHOOTING;
+                        setAutonomousState("SHOOTING");
                     }
                 }
 
@@ -299,7 +311,7 @@ public class Robot extends TimedRobot {
 
                 if (targetValid == 0.0){
                     // we lost the target somehow :|
-                    autoState = AUTO_STATE.SEEKING;
+                    setAutonomousState("SEEKING");
                     break;
                 }
 
@@ -320,11 +332,10 @@ public class Robot extends TimedRobot {
                 double sLeftError = Math.abs((sLeftEncoder.getVelocity() - (predictedSpeedForShot * sLeft.getMaxRPM())) / (predictedSpeedForShot * sLeft.getMaxRPM()));
                 double sRightError = Math.abs((sRightEncoder.getVelocity() - (predictedSpeedForShot * sRight.getMaxRPM())) / (predictedSpeedForShot * sRight.getMaxRPM()));
 
-
                 // once rpm is reached according to the sensor, push the ball to the shooter
                 // watch as we clock someone in the stands
                 if ((sLeftError < SHOOTER_THRESHOLD) && (sRightError < SHOOTER_THRESHOLD)) {
-                    cargoPush.set(1);
+                    cargoPush.set(1.0);
                 }
 
                 // TODO
@@ -350,26 +361,59 @@ public class Robot extends TimedRobot {
     /** This function is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
-        drivetrain.tankDrive(driverController.getLeftThumbstickY(), driverController.getRightThumbstickY());
+        System.out.println("Left Thumbstick: " + driverController.getLeftThumbstickY());
+        drivetrain.tankDrive(driverController.getLeftThumbstickY() * 0.7, -driverController.getRightThumbstickY() * 0.7);
 
         // intake
-        if (operatorController.getButtonTwo()) {
-            intake.set(-1);
+        if (operatorController.getButtonThree()) {
+            intake.set(-1.0);
         }
 
         // shooter and cargo push
 
         if (operatorController.getButtonOne()) {
+
+            double rpmDifference = sLeftEncoder.getVelocity() - Math.abs(sRightEncoder.getVelocity());
+            double decreaseLeftBy = (rpmDifference/1600);
+
+            sRight.set(operatorController.getSlider());
+            System.out.println("decrease by " + ( 1 - decreaseLeftBy));
             sLeft.set(operatorController.getSlider());
-            sRight.set(-operatorController.getSlider());
+            
 
             // % error = (actual - expected) / expected
+
+            /*
             double sLeftError = Math.abs((sLeftEncoder.getVelocity() - (operatorController.getSlider() * sLeft.getMaxRPM())) / (operatorController.getSlider() * sLeft.getMaxRPM()));
             double sRightError = Math.abs((sRightEncoder.getVelocity() - (operatorController.getSlider() * sRight.getMaxRPM())) / (operatorController.getSlider() * sRight.getMaxRPM()));
 
+            SmartDashboard.putNumber("sLeftError", sLeftError);
+            SmartDashboard.putNumber("sRightError", sRightError);
+
             if ((sLeftError < SHOOTER_THRESHOLD) && (sRightError < SHOOTER_THRESHOLD)) {
-                cargoPush.set(1);
+
+                 cargoPush.set(1.0);
             }
+            */
+
+            // shoot based on operator
+
+            
+        
+            double expectedRPMLeft = operatorController.getSlider() * -1600 * 0.9;
+            double expectedRPMRight = operatorController.getSlider() * 1600 * 0.9;
+
+            Boolean isLeftAtRPM = (sLeftEncoder.getVelocity() > expectedRPMLeft);
+            Boolean isRightAtRPM = (sRightEncoder.getVelocity() < expectedRPMRight);
+
+            SmartDashboard.putNumber("ExpectedRPMLeft", expectedRPMLeft);
+            SmartDashboard.putNumber("ExpectedRPMRight", expectedRPMRight);
+
+            if (isLeftAtRPM && isRightAtRPM){
+                System.out.println("FIRE");
+                cargoPush.set(1.0);
+            }
+
         } else {
             sLeft.stopMotor();
             sRight.stopMotor();
