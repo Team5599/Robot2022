@@ -34,7 +34,7 @@ public class PIDTalonFX extends WPI_TalonFX {
 
     @Override
     public void set(double speed) {
-        final float MAX_RPM = 3000.f;
+        final double MAX_RPM = 3000.f * 0.7;
 
         /* 2000 RPM in either direction */
         double targetVelocity_UnitsPer100ms = speed * MAX_RPM * 2048.0 / 600.0;
