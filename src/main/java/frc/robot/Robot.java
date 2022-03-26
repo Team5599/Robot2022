@@ -21,6 +21,8 @@ import java.util.Map;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.CANSparkMax.ControlType;
+
 import frc.robot.PIDMotors.PIDSparkMax;
 
 // Import for pneumatics (PCM)
@@ -97,6 +99,7 @@ public class Robot extends TimedRobot {
     double rangeEstimate = 0;
 
     boolean isLoadedWithBall = false;
+    double distanceTaxied;
 
     /**
      * This function is run when the robot is first started up and should be used
@@ -120,18 +123,20 @@ public class Robot extends TimedRobot {
         // shooter motor(s)
         sLeft = new PIDSparkMax(12, MotorType.kBrushless);
         sRight = new PIDSparkMax(3, MotorType.kBrushless);
+        sRight.setInverted(true);
 
         intake = new CANSparkMax(2, MotorType.kBrushless);
         shooterPivot = new Spark(1);
 
-        cargoPush = new Spark(0);
+        cargoPush = new Spark(2);
 
         // left drivetrain
         lDrive = new MotorControllerGroup(l0, l1);
 
         // right drivetrain
         rDrive = new MotorControllerGroup(r0, r1);
-
+        rDrive.setInverted(true);
+        
         // drivetrain
         drivetrain = new DifferentialDrive(lDrive, rDrive);
 
@@ -150,6 +155,9 @@ public class Robot extends TimedRobot {
         // shooter motor encoder
         sLeftEncoder = sLeft.getEncoder();
         sRightEncoder = sRight.getEncoder();
+
+        sLeft.setMaxRPM(1000);
+        sRight.setMaxRPM(1000);
     }
 
     /**
@@ -179,6 +187,8 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber("Left Shooter Encoder", sLeftEncoder.getVelocity());
         SmartDashboard.putNumber("Right Shooter Encoder", sRightEncoder.getVelocity());
         SmartDashboard.putNumber("shooterThreshold", SHOOTER_THRESHOLD);
+
+        SmartDashboard.putNumber("Distance Taxied", distanceTaxied);
     }
 
     /**
@@ -206,11 +216,10 @@ public class Robot extends TimedRobot {
         autoStateToString.put(AUTO_STATE.ALIGNING, "ALIGNING");
         autoStateToString.put(AUTO_STATE.SHOOTING, "SHOOTING");
 
-
         setAutonomousState(AUTO_STATE.TAXIING);
 
         // Zero sensor
-        // l0.getSensorCollection().setIntegratedSensorPosition(0, 1000);
+        l0.getSensorCollection().setIntegratedSensorPosition(0, 1000);
     }
 
     public void setAutonomousState(AUTO_STATE state) {
@@ -221,7 +230,8 @@ public class Robot extends TimedRobot {
     /** This function is called periodically during autonomous. */
     @Override
     public void autonomousPeriodic() {
-
+        drivetrain.tankDrive(-0.4, 0.4);
+        SmartDashboard.putString("Autonomous State", autoStateToString.get(autoState));
         double targetXOffset = tXEntry.getDouble(0.0);
         double targetYOffset = tYEntry.getDouble(0.0);
         double targetAreaPercent = targetAreaEntry.getDouble(0.0);
@@ -236,22 +246,20 @@ public class Robot extends TimedRobot {
          * - Taxi forward until we achieve that distance
          * - Move on to the next phase once we taxi the required distance
          */
-        double distanceTaxied = (l0.getSensorCollection().getIntegratedSensorPosition() / 2048) * (Math.PI * 2 * DRIVE_WHEEL_RADIUS); // meters
+        distanceTaxied = (l0.getSensorCollection().getIntegratedSensorPosition() / 2048) * (Math.PI * 2 * DRIVE_WHEEL_RADIUS); // meters
         double steering_adjust = 0.0; 
 
         switch (autoState) {
+            case TAXIING:
+                if (distanceTaxied < TARMAC_DISTANCE) {
+                    drivetrain.tankDrive(0.3, 0.3);
+                } else {
+                    drivetrain.stopMotor();
+                    sLeft.stopMotor();
+                    sRight.stopMotor();
+                    shooterPivot.stopMotor();
 
-             case TAXIING:
-
-              if (distanceTaxied < TARMAC_DISTANCE) {
-                drivetrain.tankDrive(0.5, 0.5);
-                 } else {
-                     drivetrain.stopMotor();
-                     sLeft.stopMotor();
-                     sRight.stopMotor();
-                     shooterPivot.stopMotor();
-
-                     setAutonomousState(AUTO_STATE.SEEKING);
+                    setAutonomousState(AUTO_STATE.SEEKING);
                 }
 
             case SEEKING:
@@ -373,46 +381,56 @@ public class Robot extends TimedRobot {
     /** This function is called periodically during operator control. */
     @Override
     public void teleopPeriodic() {
-        System.out.println("Left Thumbstick: " + driverController.getLeftThumbstickY());
-        drivetrain.tankDrive(driverController.getLeftThumbstickY(), -driverController.getRightThumbstickY());
+        drivetrain.tankDrive(driverController.getLeftThumbstickY() * 0.9, driverController.getRightThumbstickY() * 0.9);
 
         // intake
+        if (operatorController.getButtonFive()) {
+            sLeft.set(-0.9);
+            sRight.set(-0.9);
+        } else {
+            sLeft.stopMotor();
+            sRight.stopMotor();
+        }
+
         if (operatorController.getButtonThree()) {
-            intake.set(-1.0);
+            intake.set(0.4);
+        } else {
+            intake.stopMotor();
         }
 
         // shooter and cargo push
 
         if (operatorController.getButtonOne()) {
 
-            double rpmDifference = sLeftEncoder.getVelocity() - Math.abs(sRightEncoder.getVelocity());
-            double decreaseLeftBy = (rpmDifference/1600);
 
-            sRight.set(operatorController.getSlider());
+
+            /*
+            double rpmDifference = sLeftEncoder.getVelocity() - Math.abs(sRightEncoder.getVelocity());
+            double decreaseLeftBy = (rpmDifference / 1600);
             System.out.println("decrease by " + ( 1 - decreaseLeftBy));
+*/
+            sRight.set(operatorController.getSlider());
             sLeft.set(operatorController.getSlider());
             
 
             // % error = (actual - expected) / expected
 
-            /*
-            double sLeftError = Math.abs((sLeftEncoder.getVelocity() - (operatorController.getSlider() * sLeft.getMaxRPM())) / (operatorController.getSlider() * sLeft.getMaxRPM()));
-            double sRightError = Math.abs((sRightEncoder.getVelocity() - (operatorController.getSlider() * sRight.getMaxRPM())) / (operatorController.getSlider() * sRight.getMaxRPM()));
+        
+            double sLeftError =     Math.abs((sLeftEncoder.getVelocity()  - (operatorController.getSlider() * sLeft.getMaxRPM() )) / (operatorController.getSlider() * sLeft.getMaxRPM() ));
+            double sRightError =   -Math.abs((sRightEncoder.getVelocity() - (operatorController.getSlider() * sRight.getMaxRPM())) / (operatorController.getSlider() * sRight.getMaxRPM()));
 
             SmartDashboard.putNumber("sLeftError", sLeftError);
             SmartDashboard.putNumber("sRightError", sRightError);
 
             if ((sLeftError < SHOOTER_THRESHOLD) && (sRightError < SHOOTER_THRESHOLD)) {
-
-                 cargoPush.set(1.0);
+                 cargoPush.set(.99);
             }
-            */
 
             // shoot based on operator
 
+            /*
             
-            sLeft.setMaxRPM(1600);
-            sRight.setMaxRPM(1600);
+
         
             double expectedRPMLeft = operatorController.getSlider() * -0.9;
             double expectedRPMRight = operatorController.getSlider() * 0.9;
@@ -426,7 +444,7 @@ public class Robot extends TimedRobot {
             if (isLeftAtRPM && isRightAtRPM){
                 System.out.println("FIRE");
                 cargoPush.set(1.0);
-            }
+            } */
 
         } else {
             sLeft.stopMotor();
