@@ -437,8 +437,8 @@ public class Robot extends TimedRobot {
 
 
             // shoot based on operator
-            double expectedRPMLeft = operatorController.getSlider() * -0.9;
-            double expectedRPMRight = operatorController.getSlider() * 0.9;
+            double expectedRPMLeft = operatorController.getSlider() * -0.9 * 400;
+            double expectedRPMRight = operatorController.getSlider() * 0.9 * 400;
 
             Boolean isLeftAtRPM = (sLeftEncoder.getVelocity() > expectedRPMLeft);
             Boolean isRightAtRPM = (sRightEncoder.getVelocity() < expectedRPMRight);
