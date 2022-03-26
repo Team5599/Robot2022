@@ -87,7 +87,7 @@ public class Robot extends TimedRobot {
     HashMap<AUTO_STATE, String> autoStateToString = new HashMap<AUTO_STATE, String>();
 
     final double DRIVE_WHEEL_RADIUS = 0.0762; // meters 
-    final double TARMAC_DISTANCE = 2.65; // meters
+    final double TARMAC_DISTANCE = 6.5; // meters
     final double SHOOTER_THRESHOLD = 0.05;
 
 
@@ -238,7 +238,7 @@ public class Robot extends TimedRobot {
     @Override
     public void autonomousPeriodic() {
 
-        drivetrain.tankDrive(0.4, 0.4);
+        // drivetrain.tankDrive(0.4, 0.4);
         SmartDashboard.putString("Autonomous State", autoStateToString.get(autoState));
 
         double targetXOffset = tXEntry.getDouble(0.0);
@@ -255,21 +255,23 @@ public class Robot extends TimedRobot {
          * - Taxi forward until we achieve that distance
          * - Move on to the next phase once we taxi the required distance
          */
-        distanceTaxied = (l0.getSensorCollection().getIntegratedSensorAbsolutePosition() / 2048) * (Math.PI * 2 * DRIVE_WHEEL_RADIUS); // meters
+        distanceTaxied = (l0.getSensorCollection().getIntegratedSensorPosition() / 2048) * (Math.PI * 2 * DRIVE_WHEEL_RADIUS); // meters
         double steering_adjust = 0.0; 
 
         switch (autoState) {
             case TAXIING:
                 if (distanceTaxied < TARMAC_DISTANCE) {
-                 drivetrain.tankDrive(0.3, 0.3);
-             } else {
-                 drivetrain.stopMotor();
-                 sLeft.stopMotor();
+                    drivetrain.tankDrive(0.3, 0.3);
+                } else {
+                    drivetrain.stopMotor();
+                    sLeft.stopMotor();
                     sRight.stopMotor();
                     shooterPivot.stopMotor();
 
                     setAutonomousState(AUTO_STATE.SEEKING);
                 }
+
+                break;
 
             case SEEKING:
 
@@ -397,12 +399,12 @@ public class Robot extends TimedRobot {
             sLeft.set(-0.9);
             sRight.set(0.9);
             intake.set(0.4);
-            shooterPivot.set(0.5);
+            shooterPivot.set(0.95);
         } else if (operatorController.getButtonFive()){
             sLeft.set(0.9);
             sRight.set(0.9);
             intake.set(-0.4);
-            shooterPivot.set(0.5);
+            shooterPivot.set(0.95);
             cargoPush.set(1.0);
         }
 
@@ -415,7 +417,6 @@ public class Robot extends TimedRobot {
 
             sRight.set(operatorController.getSlider());
             sLeft.set(-operatorController.getSlider());
-            shooterPivot.set(-0.5);
 
             // sRight.set(operatorController.getSlider());
             // sLeft.set(operatorController.getSlider());
@@ -448,7 +449,8 @@ public class Robot extends TimedRobot {
             if (isLeftAtRPM && isRightAtRPM){
                 System.out.println("FIRE");
                 cargoPush.set(-1.0);
-                intake.set(0.9);
+                // intake.set(0.9);
+                shooterPivot.set(-0.95);
             }
 
         } else if (!operatorController.getButtonFive()) {
