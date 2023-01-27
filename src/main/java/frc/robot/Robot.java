@@ -22,7 +22,6 @@ import java.util.HashMap;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.CANSparkMax.ControlType;
 
 import frc.robot.PIDMotors.PIDSparkMax;
 
@@ -111,7 +110,7 @@ public class Robot extends TimedRobot {
     public void robotInit() {
         // Initialize objects
         driverController = new XBoxController(0);
-        operatorController = new LogitechExtreme3DProController(1);
+        //operatorController = new LogitechExtreme3DProController(1);
 
         // Left Falcon motor(s)
         l0 = new PIDTalonFX(2); //14
@@ -162,8 +161,8 @@ public class Robot extends TimedRobot {
         sLeftEncoder = sLeft.getEncoder();
         sRightEncoder = sRight.getEncoder();
 
-        sLeft.setMaxRPM(1600);
-        sRight.setMaxRPM(1600);
+        sLeft.setMaxRPM(2000); // testing change
+        sRight.setMaxRPM(2000); // testing change
 
     }
 
@@ -261,7 +260,7 @@ public class Robot extends TimedRobot {
         switch (autoState) {
             case TAXIING:
                 if (distanceTaxied < TARMAC_DISTANCE) {
-                    drivetrain.tankDrive(0.3, 0.3);
+                    drivetrain.tankDrive(0.7, 0.7);
                 } else {
                     drivetrain.stopMotor();
                     sLeft.stopMotor();
